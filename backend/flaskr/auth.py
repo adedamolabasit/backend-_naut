@@ -48,7 +48,7 @@ admin.add_view(Controller(Images,db.session))
 
 @app.route('/')
 def index():
-    return render_template('profile/account.html')
+    return render_template('')
 
 # login fuction
 @app.route('/login',methods=['GET','POST'])
