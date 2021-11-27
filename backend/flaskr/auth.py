@@ -373,7 +373,7 @@ def message():
 
 @app.route('/account/<int:user_id>',methods=['GET','POST'])
 def account_details(user_id):
-    form=PostForm
+    form=PostForm()
     current=int(current_user.id)
     if current == user_id:
         user=User.query.filter_by(id=user_id).join(Post).all()
