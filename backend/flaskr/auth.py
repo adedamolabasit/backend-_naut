@@ -45,10 +45,11 @@ admin.add_view(Controller(Contact,db.session))
 admin.add_view(Controller(Newsletter,db.session))
 admin.add_view(Controller(Event,db.session))
 admin.add_view(Controller(Images,db.session))
+admin.add_view(Controller(Post,db.session))
 
 @app.route('/')
 def index():
-    return render_template('')
+    return render_template('naut/blank.html')
 
 # login fuction
 @app.route('/login',methods=['GET','POST'])
@@ -281,6 +282,138 @@ def create_event():
         db.session.commit()
         return "siccess"
     return render_template('naut/event_create.html')
+
+
+
+
+# save and protect user image upload
+def save_picture(form_picture):
+    random_hex=secrets.token_hex(8)
+    _,f_ext=os.path.splitext(form_picture.filename)
+    picture_fn=random_hex + f_ext
+    picture_path=os.path.join(app.root_path,'static/profile_pics',picture_fn)
+    output_size=(125,125)
+    i=Image.open(form_picture)
+    i.thumbnail(output_size)
+    i.save(picture_path)
+    return picture_fn
+
+# user account
+@app.route("/account",methods=['GET','POST'])
+@login_required
+def account():
+    form=UpdateAccountForm()
+    if form.validate_on_submit():
+        if form.picture.data:
+            picture_file=save_picture(form.picture.data)
+            current_user.image_file=picture_file
+        current_user.about=form.about.data
+        current_user.username=form.username.data
+        current_user.email=form.email.data
+        current_user.facebook=form.facebook.data
+        current_user.instagram=form.instagram.data
+        current_user.twitter=form.twitter.data
+        current_user.github=form.github.data
+        current_user.website=form.website.data
+        current_user.number=form.number.data
+        
+        db.session.commit()
+        flash('your account has been updated!','success')
+        return redirect(url_for('account'))
+    elif request.method == 'GET':
+        form.username.data=current_user.username
+        form.email.data=current_user.email
+        form.about.data=current_user.about
+        form.facebook.data=current_user.facebook
+        form.instagram.data=current_user.instagram
+        form.twitter.data=current_user.twitter
+        form.github.data=current_user.github
+        form.website.data=current_user.website
+        form.number.data=current_user.number
+
+    user=int(current_user.id)
+    
+    profile=User.query.join(Post).filter_by(user_id=user).order_by(Post.id).first()
+    user_profile=User.query.filter_by(id=user).first()
+    bucket=[]
+    for con in profile.post:
+        content={
+            'content':con.content,
+            'posted_date':con.date_posted
+
+        }
+        
+    
+        bucket.append(content)
+
+
+    return render_template('naut/account.html',title='Account'
+    ,image_file=current_user.image_file
+    ,form=form,profile=profile,bucket=bucket
+    ,user=user_profile,)
+
+
+@app.route('/message',methods=['GET','POST'])
+def message():
+        form=PostForm()
+        if request.method == "POST":
+
+            if current_user.is_authenticated:
+                if form.validate_on_submit():
+                    title=form.title.data
+                    content=form.content.data
+                    user=int(current_user.id)
+                    post=Post(title=title,content=content,user_id=user)
+                    db.session.add(post)
+                    db.session.commit()
+                    return redirect(url_for('account'))
+        
+        return render_template('naut/message.html',form=form)
+
+
+@app.route('/account/<int:user_id>',methods=['GET','POST'])
+def account_details(user_id):
+    form=PostForm
+    current=int(current_user.id)
+    if current == user_id:
+        user=User.query.filter_by(id=user_id).join(Post).all()
+    else:
+        abort(422)
+    return render_template('naut/account_details.html',user=user,form=form)
+
+
+@app.route('/nauthub',methods=['GET','POST'])
+def hub():
+    form=PostForm()
+    if request.method == "POST":
+
+        if current_user.is_authenticated:
+            if form.validate_on_submit():
+                title=form.title.data
+                content=form.content.data
+                user=int(current_user.id)
+                post=Post(title=title,content=content,user_id=user)
+                db.session.add(post)
+                db.session.commit()
+                return redirect(url_for('hub'))
+    reg=User.query.order_by(User.username).all()
+    user_profile=Post.query.order_by(Post.date_posted).join(User).limit(215).all()
+    return render_template('naut/hub.html',user=user_profile,form=form,registered=reg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

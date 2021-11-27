@@ -20,6 +20,16 @@ class User(db.Model,UserMixin):
     password=db.Column(db.String(211))
     is_admin=db.Column(db.Boolean(),default=False)
     is_staff=db.Column(db.Boolean(),default=False)
+    about=db.Column(db.String(552),nullable=True)
+    facebook=db.Column(db.String(65),nullable=True)
+    instagram=db.Column(db.String(65),nullable=True)
+    twitter=db.Column(db.String(65),nullable=True)
+    github=db.Column(db.String(65),nullable=True)
+    website=db.Column(db.String(65),nullable=True) 
+    number=db.Column(db.Integer,nullable=True)
+    post=db.relationship('Post',cascade='all,delete' ,backref='user', lazy=True)
+    def __repr__(self):
+        return f'<username {self.username},id {self.id}>'
     
     def get_reset_token(self,expires_sec=1200):
         s=Serializer(app.config['SECRET_KEY'],expires_sec)
@@ -55,10 +65,13 @@ class Newsletter(db.Model):
 
 class Post(db.Model):
     id=db.Column(db.Integer,primary_key=True)
-    title=db.Column(db.String(112),nullable=True)
+    title=db.Column(db.String(112),nullable=False)
     date_posted=db.Column(db.DateTime,nullable=False,default=datetime.utcnow)
     content=db.Column(db.Text,nullable=True)
     user_id=db.Column(db.Integer,db.ForeignKey('user.id'),nullable=False)
+
+    def __repr__(self):
+        return f'<title {self.title},id {self.id}>'
 
 
 
@@ -137,6 +150,7 @@ class Contact(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
 
 
 

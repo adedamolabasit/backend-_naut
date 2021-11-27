@@ -55,10 +55,19 @@ class ResetPasswordForm(FlaskForm):
 
 
 class UpdateAccountForm(FlaskForm):
-     username=StringField('Username',validators=[DataRequired(),length(min=4,max=21)],render_kw={'placeholder':'username'})
-   
      email=StringField('Email',validators=[DataRequired(),Email()],render_kw={'placeholder':'Email'})
      picture=FileField('Update Profile Picture',validators=[FileAllowed(['jpg','png','jpeg'])])
+     username=StringField('Username',validators=[DataRequired(),length(min=4,max=21)],render_kw={'placeholder':'username'})
+     about=TextAreaField('Content',validators=[length(min=1,max=515)])
+     
+     facebook=StringField('Facebook',validators=[length(min=4,max=35)],render_kw={'placeholder':'facebook'})
+     instagram=StringField('Instagram',validators=[length(min=4,max=35)],render_kw={'placeholder':'instagram'})
+     twitter=StringField('Twitter',validators=[length(min=4,max=35)],render_kw={'placeholder':'twitter'})
+     github=StringField('Github',validators=[length(min=4,max=35)],render_kw={'placeholder':'github'})
+     website=StringField('Website',validators=[length(min=4,max=35)],render_kw={'placeholder':'website'})
+     number=StringField('Number',validators=[length(min=4,max=35)],render_kw={'placeholder':'Phone Number'})
+
+    
      submit=SubmitField('Update')
      
      def validate_username(self,username):
@@ -74,6 +83,6 @@ class UpdateAccountForm(FlaskForm):
                 raise ValidationError("The email is taken")
          
 class PostForm(FlaskForm):
-    title=StringField('Title',validators=[DataRequired()])
+    title=StringField('Title')
     content=TextAreaField('Content',validators=[DataRequired()])
     submit=SubmitField('Post')
