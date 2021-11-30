@@ -43,6 +43,16 @@ class User(db.Model,UserMixin):
             return None
         return User.query.get(user_id)
 
+   
+class PendUser(db.Model):
+    __tablename__='penduser'
+    __table_args__ = {'extend_existing': True}
+
+
+    id=db.Column(db.Integer,primary_key=True)
+    username=db.Column(db.String(21))
+    email=db.Column(db.String(112))
+    password=db.Column(db.String(211))
     def get_verify_email_token(self,expires_sec=1200):
         s=Serializer(app.config['SECRET_KEY'],expires_sec)
         return s.dumps({'email':self.id}).decode('utf-8')
@@ -55,12 +65,28 @@ class User(db.Model,UserMixin):
             return None
         return User.query.get(user_id)
 
+
 class Newsletter(db.Model):
     __tablename__='newsletter'
     id=db.Column(db.Integer,primary_key=True)
     email=db.Column(db.String(112))
+    def get_newsletter_token(self,expires_sec=1200):
+        s=Serializer(app.config['SECRET_KEY'],expires_sec)
+        return s.dumps({'user_id':self.id}).decode('utf-8') 
 
+    @staticmethod
+    def verify_newsletter_token(token):
+        s=Serializer(app.config['SECRET_KEY'])
+        try:  
+            user_id = s.loads(token)['user_id']
+        except:
+            return None
+        return Newsletter.query.get(user_id)
 
+class ComfirmedNewsletter(db.Model):
+    __tablename__='comfirmation_newsletter'
+    id=db.Column(db.Integer,primary_key=True)
+    email=db.Column(db.String(112))
 
 
 class Post(db.Model):

@@ -1,14 +1,17 @@
 from flask.templating import render_template_string
 
 from flask_wtf import FlaskForm
-
+from flaskr import app
 from wtforms.fields.core import BooleanField, IntegerField
 from wtforms import StringField, SubmitField,BooleanField,PasswordField,BooleanField,TextAreaField
 from wtforms.validators import length,DataRequired,Email,EqualTo,ValidationError,InputRequired
-from flaskr.models import User
+from flaskr.models import User,Newsletter,ComfirmedNewsletter
 from flask_login import current_user
 from flask_wtf.file import FileField, FileAllowed
+from flask_bcrypt import Bcrypt
 
+
+bcrypt=Bcrypt(app)
 
 class RegistrationForm(FlaskForm):
      username=StringField('Username',validators=[DataRequired(),length(min=4,max=21)],render_kw={'placeholder':'username'})   
@@ -46,13 +49,36 @@ class RequestResetForm(FlaskForm):
             existing_email=User.query.filter_by(email=email.data).first()
             if existing_email is None:
                 raise ValidationError("There is no account with this email.You must register First")
+class NewsletterForm(FlaskForm):
+     email=StringField('Email',validators=[DataRequired(),Email()],render_kw={'placeholder':'Email'})
+     submit=SubmitField('Comfirm newsletter mail')
+
+     def validate_email(self,email):
+            
+            comfirmed_existing_email=ComfirmedNewsletter.query.filter_by(email=email.data).first()
+            
+            if comfirmed_existing_email:
+                 raise ValidationError("You are a subscriber")
 
 
 class ResetPasswordForm(FlaskForm):
      password=PasswordField('Password',validators=[DataRequired()],render_kw={'placeholder':'************'})   
      comfirm_password=PasswordField('Comfirlm password',validators=[DataRequired(),EqualTo('password')],render_kw={'placeholder':'************'}) 
      submit=SubmitField('Request Password')
+class ChangePasswordForm(FlaskForm):
+     old_password=PasswordField('Password',validators=[DataRequired()],render_kw={'placeholder':'************'})   
+     new_password=PasswordField('New password',validators=[DataRequired()],render_kw={'placeholder':'************'}) 
+     comfirm_password=PasswordField('Comfirm password',validators=[DataRequired(),EqualTo('new_password')],render_kw={'placeholder':'************'}) 
+     submit=SubmitField('Change Password')
+     def validate_new_password(self,new_password):
+          new_password=new_password.data
+          hashed_password=bcrypt.generate_password_hash(new_password).decode('utf-8')
+          if current_user.password != hashed_password:
+               return ValidationError('your old password is wrong')
 
+
+
+    
 
 class UpdateAccountForm(FlaskForm):
      email=StringField('Email',validators=[DataRequired(),Email()],render_kw={'placeholder':'Email'})

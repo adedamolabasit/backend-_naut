@@ -4,8 +4,8 @@ from flaskr.models import Newsletter
 from flaskr.models import Contact
 from flaskr import app,db,mail
 from werkzeug.utils import secure_filename
-from flaskr.models import User,Contact,Event,Images,Post
-from flaskr.forms import RegistrationForm,LoginForm,RequestResetForm,ResetPasswordForm,PostForm,UpdateAccountForm
+from flaskr.models import User,Contact,Event,Images,Post,ComfirmedNewsletter,PendUser
+from flaskr.forms import RegistrationForm,LoginForm,RequestResetForm,ResetPasswordForm,PostForm,UpdateAccountForm,NewsletterForm,ChangePasswordForm
 from datetime import datetime
 from functools import wraps
 import json
@@ -46,6 +46,8 @@ admin.add_view(Controller(Newsletter,db.session))
 admin.add_view(Controller(Event,db.session))
 admin.add_view(Controller(Images,db.session))
 admin.add_view(Controller(Post,db.session))
+admin.add_view(Controller(ComfirmedNewsletter,db.session))
+admin.add_view(Controller(PendUser,db.session))
 
 @app.route('/')
 def index():
@@ -85,12 +87,12 @@ def register():
         username=form.username.data
         email=form.email.data
         if email and hashed_password:
-             user=User(username=username,password=hashed_password,email=email)
-             comfirm_email(user)
+             user=PendUser(username=username,password=hashed_password,email=email)
+            
 
              db.session.add(user)
              db.session.commit()  
-
+             comfirm_email(user)
 
              return redirect(url_for('login'))
     
@@ -128,7 +130,23 @@ def send_reset_email(user):
     mail.send(msg)
 
 
-
+@app.route('/email/<token>',methods=['GET','POST'])
+def email_token(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    user=User.verify_email_token(token)
+    if user is None:
+        flash('this is an invalid token or expired token')
+        return redirect(url_for('register'))
+    if user:
+        email=user.email
+        password=user.password
+        username=user.username
+        comfirmed_user=User(username=username,pasword=password,email=email)
+        db.session.add(comfirmed_user)
+        db.session.commit()
+        flash('Emailed Comfirmed ')
+        return redirect(url_for('index'))
 
 
 @app.route('/reset_password',methods=['GET','POST'])
@@ -161,15 +179,26 @@ def reset_token(token):
         
     return render_template('naut/reset_token.html',title='Reset password',form=form)
     
-@app.route('/email/<token>',methods=['GET','POST'])
-def email_token(token):
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    user=User.verify_email_token(token)
-    if user is None:
-        flash('this is an invalid token or expired token')
-    return redirect(url_for('login'))
-            
+
+
+@app.route('/change_password/<int:user_id>',methods=['GET','POST']) 
+def change_password(user_id):
+    form=ChangePasswordForm()
+    if request.method=='POST':
+        user=User.query.filter_by(id=user_id).first()
+        if int(current_user.id) ==  user.id:
+            if form.validate_on_submit():
+                new_passsword=form.new_password.data
+                hashed_password=bcrypt.generate_password_hash(new_passsword).decode('utf-8')               
+                if hashed_password != current_user.password:
+                    flash('old password does not match')
+                    
+                current_user.password = hashed_password
+                db.session.commit()
+                flash('password changed successfully')
+                
+    return render_template('naut/change_password.html',form=form)
+
 
 
 
@@ -371,15 +400,15 @@ def message():
         return render_template('naut/message.html',form=form)
 
 
-@app.route('/account/<int:user_id>',methods=['GET','POST'])
+@app.route('/account/<int:user_id>/',methods=['GET','POST'])
 def account_details(user_id):
-    form=PostForm()
+    form=UpdateAccountForm()
     current=int(current_user.id)
     if current == user_id:
         user=User.query.filter_by(id=user_id).join(Post).all()
     else:
         abort(422)
-    return render_template('naut/account_details.html',user=user,form=form)
+    return render_template('naut/account_details.html',user=user,form=form,image_file=current_user.image_file)
 
 
 @app.route('/nauthub',methods=['GET','POST'])
@@ -400,14 +429,51 @@ def hub():
     user_profile=Post.query.order_by(Post.date_posted).join(User).limit(215).all()
     return render_template('naut/hub.html',user=user_profile,form=form,registered=reg)
 
+@app.route('/newsletter',methods=['GET','POST'])
+def newsletter():
+    
+    return render_template('naut/newsletter.html')
+    
 
 
 
 
+@app.route('/comfirm_email',methods=['GET','POST'])
+def newsletter_request():
+    form=NewsletterForm()
+    if form.validate_on_submit():
+        email=form.email.data
+        user=Newsletter(email=email)        
+        db.session.add(user)
+        db.session.commit()
+        send_newsletter_email(user)
+        flash('An email has been sent with instructions to reset your password')
+        return redirect(url_for('hub'))
+    return render_template('naut/reset_request.html',form=form)
 
-
-
-
+def send_newsletter_email(user):
+    token=user.get_newsletter_token()
+    msg = Message('Subscribe for Newsletter',
+    sender='noreply@nautilus.com',
+    recipients=[user.email])
+    msg.body=f'''Comfirm  yor email:
+    {url_for('verify_newsletter_token',token=token,_external=True)}
+    enter the link to subscribe to our newsletter
+    '''
+    mail.send(msg)
+@app.route('/newsletter/<token>',methods=['GET'])
+def verify_newsletter_token(token): 
+    user=Newsletter.verify_newsletter_token(token)
+    if user is None:
+        flash('this is an invalid token or expired token')
+        return redirect(url_for('newsletter_request'))
+    if user:
+        mail=user.email
+        newsletter=ComfirmedNewsletter(email=mail)
+        db.session.add(newsletter)
+        db.session.commit()
+        flash('Thanks,You can now recieve our newsletter ')
+        return redirect(url_for('newsletter'))
 
 
 
