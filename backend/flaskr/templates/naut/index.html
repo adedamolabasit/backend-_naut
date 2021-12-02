@@ -1,0 +1,21 @@
+{% extends 'naut/signup.html' %}
+
+{% block content %}       
+          
+          {% with messages = get_flashed_messages() %}
+          {% if messages %}
+          {% for message in messages %}
+          <div class="alert alert-success" role="alert">
+            <h4 class="alert-heading">Wellcome {{ current_user.username }}!</h4>
+            <p>{{ message }}</p>
+            <hr>
+            <p class="mb-0"><a href="{{ url_for('newsletter_request')}}"> 
+                Subscribe to our Newsletter, and get personalized recommendations.
+                </a>.
+            </p>
+          </div>
+          {% endfor %}
+          {% endif %}
+{% endwith %}
+   
+{% endblock %}

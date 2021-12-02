@@ -175,7 +175,9 @@ body{margin-top:20px;}
 									<h4>{{ user.username}}</h4>
 									<p class="text-secondary mb-1">{{ user.email}}</p>
 									
-									<button class="btn btn-primary">Follow</button>
+									<button class="btn btn-primary">change password
+										<a href="{{url_for('change_password')}}"></a>
+									</button>
 									<button class="btn btn-outline-primary">
 										<a href="{{ url_for('message') }}">Message</a>
 									</button>

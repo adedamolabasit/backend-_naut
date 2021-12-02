@@ -51,7 +51,8 @@ admin.add_view(Controller(PendUser,db.session))
 
 @app.route('/')
 def index():
-    return render_template('naut/signup2.html')
+    flash('Subscriibe for our Newsletter,and get personalized recommendation')
+    return render_template('naut/index.html')
 
 # login fuction
 @app.route('/login',methods=['GET','POST'])
@@ -179,26 +180,57 @@ def reset_token(token):
         return redirect(url_for('login'))
         
     return render_template('naut/reset_token.html',title='Reset password',form=form)
-    
 
 
-@app.route('/change_password/<int:user_id>',methods=['GET','POST']) 
-def change_password(user_id):
-    form=ChangePasswordForm()
-    if request.method=='POST':
-        user=User.query.filter_by(id=user_id).first()
-        if int(current_user.id) ==  user.id:
-            if form.validate_on_submit():
-                new_passsword=form.new_password.data
-                hashed_password=bcrypt.generate_password_hash(new_passsword).decode('utf-8')               
-                if hashed_password != current_user.password:
-                    flash('old password does not match')
 
-                current_user.password = hashed_password
-                db.session.commit()
-                flash('password changed successfully')
-                
+
+
+
+def send_change_email(user):
+    token=user.get_reset_token()
+    msg = Message('Change Password',
+    sender='noreply@nautilus.com',
+    recipients=[user.email])
+    msg.body=f'''change your password ,visit the following link:
+    {url_for('change_password_token',token=token,_external=True)}
+    if  you did not make this request then simply ignore this email and no changes will be made
+    '''
+    mail.send(msg)
+@app.route('/change_password')
+def change_password():
+    current=int(current_user.id)
+    user=User.query.filter_by(id=current).first()  
+    send_change_email(user)
+    flash('A link has been sent to your email')
+    return 'email sent'
+
+@app.route('/change_password/<token>',methods=['GET','POST'])
+def change_password_token(token):
+    user=User.verify_reset_token(token)
+    if user is None:
+        flash('this is an invalid token or expired token')
+        return redirect(url_for('register'))
+    if user:
+        form=ChangePasswordForm()
+        if request.method=='POST':
+            current=int(current_user.id)
+            if current == user.id :
+                if form.validate_on_submit():
+                    old_password=form.old_password.data
+                    new_password=form.new_password.data
+                    hashed_new_password=bcrypt.generate_password_hash(new_password).decode('utf-8')               
+                    if not bcrypt.check_password_hash(user.password,old_password):
+                    
+                        flash('old password does not match')
+                    if  bcrypt.check_password_hash(user.password,old_password):
+                        
+                        current_user.password = hashed_new_password
+                        db.session.commit()
+                        flash('password changed successfully')
     return render_template('naut/change_password.html',form=form)
+       
+
+                
 
 
 
