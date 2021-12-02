@@ -25,23 +25,128 @@
 
 <body>
    
-            {% block content %}
 
-          
+    <div class="loader">
+        <div class="row">
+            <div class="col-3 loader-section section-left">
+                <div class="bg"></div>
+            </div>
+            <div class="col-3 loader-section section-left">
+                <div class="bg"></div>
+            </div>
+            <div class="col-3 loader-section section-right">
+                <div class="bg"></div>
+            </div>
+            <div class="col-3 loader-section section-right">
+                <div class="bg"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<div class="body_wrapper">
+<header class="header_area">
+    <nav class="navbar navbar-expand-lg menu_one menu_four">
+        <div class="container">
+            <a class="navbar-brand sticky_logo" href="#"><img src="static/naut/img/logo2.png" srcset="img/logo2x-2.png 2x" alt="logo"><img src="img/logo.png" srcset="img/logo2x.png 2x" alt=""></a>
+            <button class="navbar-toggler collapsed" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="menu_toggle">
+                    <span class="hamburger">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </span>
+                    <span class="hamburger-cross">
+                        <span></span>
+                        <span></span>
+                    </span>
+                </span>
+            </button>
 
+            <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
+                <ul class="navbar-nav menu w_menu pl_100">
+                    <li class="nav-item dropdown submenu mega_menu mega_menu_two">
+                      
+                    <!--  -->
+                    <li class="nav-item dropdown submenu mega_menu">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Account
+                        </a>
+                       
+                    </li>
+                 
+                    <li class="nav-item dropdown submenu">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Blog
+                        </a>
+                        
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown submenu">
+                        <a class="nav-link dropdown-toggle" href="{{ url_for('logout')}}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Logout
+                        </a>
+                    {% else %}
+                        
+                    </li>
+                    <li class="nav-item dropdown submenu">
+                        <a class="nav-link dropdown-toggle" href="{{ url_for('login')}}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Login
+                        </a>
+                        
+                    </li>
+                    {% endif %}
                    
+                </ul>
+                <a class="btn_get btn_hover hidden-sm hidden-xs" href="{{ url_for('index')}}">Home</a>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<section class="breadcrumb_area">
+    <img class="breadcrumb_shap" src="static/naut/img/breadcrumb/banner_bg.png" alt="">
+    <div class="container">
+        <div class="breadcrumb_content text-center">NAUTILUS
+            <h1 class="f_p f_700 f_size_50 w_color l_height50 mb_20"></h1>
+            <p class="f_400 w_color f_size_16 l_height26">...<br> ...</p>
+        </div>
+    </div>
+</section>
+
+
+
+
+
+
+
+
+           
+
+                    
         <section class="sign_in_area bg_color sec_pad">
             <div class="container">
                 <div class="sign_info">
                     <div class="row">
+                        {% block content %}
+
+                        {% with messages = get_flashed_messages() %}
+                                                {% if messages %}
+                                                {% for message in messages %}
+                                                <div class="alert alert-success" role="alert">
+                                                    {{ message }}
+                                                  </div>
+                                                {% endfor %}
+                                                {% endif %}
+                        {% endwith %}
                         <div class="col-lg-5">
                             <div class="sign_info_content">
                                 <h3 class="f_p f_600 f_size_24 t_color3 mb_40">Allready have an account?</h3>
-                                <h2 class="f_p f_400 f_size_30 mb-30">Login now and<br> starting using our <br><span class="f_700">amazing</span> products</h2>
+                                <h2 class="f_p f_400 f_size_30 mb-30">Login now <br> to see our lined up events <br><span class="f_700"></span> </h2>
                                 <ul class="list-unstyled mb-0">
-                                    <li><i class="ti-check"></i> Premium Access to all Products</li>
-                                    <li><i class="ti-check"></i> Free Testing Tools</li>
-                                    <li><i class="ti-check"></i> Unlimited User Accounts</li>
+                                    <li><i class="ti-check"></i> Access to our hub </li>
+                                    <li><i class="ti-check"></i> Lot more</li>
+                                    <li><i class="ti-check"></i>  User Accounts</li>
                                 </ul>
                             </div>
                             <div class="forgotten-password">
@@ -72,32 +177,25 @@
                                         <label class="f_p text_c f_400">Password</label>
                                         {{ form.comfirm_password(class="f_p text_c f_400") }}
                                     </div>
-                                    <div class="extra mb_20">
-                                        <div class="checkbox remember">
-                                            <label>
-                                                <input type="checkbox"> I agree to terms and conditions of this website
-                                            </label>
-                                        </div>
-                                        <!--//check-box-->
-                                  
-                                    </div>
-                                    {% with messages = get_flashed_messages() %}
-                                    {% if messages %}
-                                    {% for message in messages %}
-                                        {{ message }}
-                                    {% endfor %}
-                                    {% elif form.errors %}
+                               
+                                 
+                                    {% if form.errors %}
                                 
                                     <div class="alert alert-danger" role="alert">
-                                        {{ form.errors }} 
-                                      </div>
+                                        
+                                            {{ form.errors }}
+                                        
+                                        
+                                        
+                
+                                    </div>
                                     
                                     
                                     {% endif %}
-                                    {% endwith %}
+                                    
                         
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <button type="submit" class="btn_three">{{ form.submit(class='btn-submit') }}</button>
+                                        {{ form.submit(class='btn_three') }}
                                        
                                     </div>
                                     

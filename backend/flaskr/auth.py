@@ -51,7 +51,7 @@ admin.add_view(Controller(PendUser,db.session))
 
 @app.route('/')
 def index():
-    return render_template('naut/blank.html')
+    return render_template('naut/signup2.html')
 
 # login fuction
 @app.route('/login',methods=['GET','POST'])
@@ -61,7 +61,7 @@ def login():
     form=LoginForm()
     if form.validate_on_submit():
         email=form.email.data
-        user=User.query.filter_by(email=email ).first()
+        user=User.query.filter_by(email=email).first()
 
         if user:
             if bcrypt.check_password_hash(user.password,form.password.data):
@@ -82,21 +82,22 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('index')) 
     form=RegistrationForm()
-    if form.validate_on_submit():     
-        hashed_password=bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        username=form.username.data
-        email=form.email.data
-        if email and hashed_password:
-             user=PendUser(username=username,password=hashed_password,email=email)
-            
+    if request.method == 'POST':
+        if form.validate_on_submit():     
+            hashed_password=bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+            username=form.username.data
+            email=form.email.data
+            if email and hashed_password:
+                user=PendUser(username=username,password=hashed_password,email=email)
+                
 
-             db.session.add(user)
-             db.session.commit()  
-             comfirm_email(user)
-
-             return redirect(url_for('login'))
-    
-
+                db.session.add(user)
+                db.session.commit()  
+                comfirm_email(user)
+                flash(f'A mail has been sent to the email address you entered .Comfirm your email by clicking the link that was sent to your email .Thank your','success')
+                
+    if request.method == 'GET':
+         return render_template('naut/signup.html',form=form)
     return render_template('naut/signup.html',form=form)
 
 def comfirm_email(user):
@@ -134,7 +135,7 @@ def send_reset_email(user):
 def email_token(token):
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    user=User.verify_email_token(token)
+    user=PendUser.verify_email_token(token)
     if user is None:
         flash('this is an invalid token or expired token')
         return redirect(url_for('register'))
@@ -142,7 +143,7 @@ def email_token(token):
         email=user.email
         password=user.password
         username=user.username
-        comfirmed_user=User(username=username,pasword=password,email=email)
+        comfirmed_user=User(username=username,password=password,email=email)
         db.session.add(comfirmed_user)
         db.session.commit()
         flash('Emailed Comfirmed ')
@@ -192,7 +193,7 @@ def change_password(user_id):
                 hashed_password=bcrypt.generate_password_hash(new_passsword).decode('utf-8')               
                 if hashed_password != current_user.password:
                     flash('old password does not match')
-                    
+
                 current_user.password = hashed_password
                 db.session.commit()
                 flash('password changed successfully')
@@ -364,21 +365,21 @@ def account():
     
     profile=User.query.join(Post).filter_by(user_id=user).order_by(Post.id).first()
     user_profile=User.query.filter_by(id=user).first()
-    bucket=[]
-    for con in profile.post:
-        content={
-            'content':con.content,
-            'posted_date':con.date_posted
+    # bucket=[]
+    # for con in profile.post:
+    #     content={
+    #         'content':con.content,
+    #         'posted_date':con.date_posted
 
-        }
+    #     }
         
     
-        bucket.append(content)
+    #     bucket.append(content)
 
 
     return render_template('naut/account.html',title='Account'
     ,image_file=current_user.image_file
-    ,form=form,profile=profile,bucket=bucket
+    ,form=form,profile=profile
     ,user=user_profile,)
 
 
@@ -478,7 +479,17 @@ def verify_newsletter_token(token):
 
 
 
-
+@app.route('/send/newsletter',methods=['GET'])
+def send_news_letter():
+    users=ComfirmedNewsletter.query.all()
+    with mail.connect() as con:
+        for user in users:
+            msg=Message('Newsletter',sender='noreply@nautilus.com',recipients=[user.email])
+            msg.html='<b> this is the newsletter i have for you</b>'
+            con.send(msg)
+    print(users.email)
+    return 'message sent'
+    
 
 
 
